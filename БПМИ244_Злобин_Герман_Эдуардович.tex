@@ -1,0 +1,118 @@
+\documentclass[a4paper,12pt]{extarticle}
+
+\usepackage{geometry}
+\geometry{
+    left=2.5cm,
+    right=1.0cm,
+    top=2.0cm,
+    bottom=2.0cm
+}
+
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english,russian]{babel}
+
+\usepackage{csquotes}
+
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{mathtools}
+
+\usepackage{graphicx}
+\graphicspath{{graphics/}}
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage{colortbl}
+
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{makecell}
+\usepackage[flushleft]{threeparttable}
+\usepackage{tablefootnote}
+
+\usepackage{tikz}
+\usepackage{pgf}
+\usepackage{subcaption}
+
+\usepackage{listings}
+
+\usepackage{indentfirst}
+\usepackage{setspace}
+\usepackage{fancyhdr}
+
+\setlength{\parindent}{1.25cm}
+\onehalfspacing
+
+\emergencystretch=3em
+\tolerance=1000
+\sloppy
+
+\usepackage{chngcntr}
+\counterwithin{table}{section}
+\counterwithin{figure}{section}
+
+\usepackage[
+    backend=biber,
+    style=numeric,
+    sorting=none,
+    maxbibnames=99
+]{biblatex}
+
+\addbibresource{refs.bib}
+
+\usepackage[
+    colorlinks=true,
+    citecolor=blue,
+    linkcolor=blue,
+    urlcolor=blue,
+    bookmarks=true,
+    bookmarksopen=true,
+    hypertexnames=true
+]{hyperref}
+
+\newcommand{\bibref}[3]{\hyperlink{#1}{#2 (#3)}}
+
+\renewcommand{\theenumi}{\arabic{enumi}}
+\renewcommand{\labelenumi}{\arabic{enumi}}
+\renewcommand{\theenumii}{.\arabic{enumii}}
+\renewcommand{\labelenumii}{\arabic{enumi}.\arabic{enumii}.}
+\renewcommand{\theenumiii}{.\arabic{enumiii}}
+\renewcommand{\labelenumiii}{\arabic{enumi}.\arabic{enumii}.\arabic{enumiii}.}
+
+
+
+
+
+\begin{document}
+    \input{title_kr}
+
+    \newpage
+    \setcounter{page}{2}
+
+    {
+        \hypersetup{linkcolor=black}
+        \tableofcontents
+    }
+
+    \newpage
+
+    \section*{Аннотация}
+
+    % TODO: написать после получения результатов
+
+    \section*{Ключевые слова}
+    БПЛА; визуальная одометрия; визуально-инерциальная навигация; SLAM; GNSS; ORB-SLAM3; VINS-Fusion; OpenVINS; MAVLink; ArduPilot.
+    \pagebreak
+
+    \section{Введение}\label{sec:introduce}
+
+    % TODO: введение пишется после обзора и экспериментов
+
+    \pagebreak
+
+    \input{sections/review}
+
+    \printbibliography[heading=bibintoc]
+
+\end{document}
