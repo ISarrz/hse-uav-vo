@@ -14,11 +14,12 @@ from evo.core import sync
 from evo.tools import file_interface
 
 HERE = Path(__file__).resolve().parent.parent
+# палитра проверена на различимость при дальтонизме; стиль линии -- второй признак
 METHODS = {
-    "orbslam3_mono_inertial": ("ORB-SLAM3", "tab:orange"),
-    "vins_mono_imu_loop": ("VINS-Fusion + петли", "tab:red"),
-    "vins_mono_imu": ("VINS-Fusion", "tab:green"),
-    "openvins_mono": ("OpenVINS", "tab:blue"),
+    "orbslam3_mono_inertial": ("ORB-SLAM3", "#E69F00", "-"),
+    "vins_mono_imu_loop": ("VINS-Fusion + петли", "#B2182B", "--"),
+    "vins_mono_imu": ("VINS-Fusion (VIO)", "#009E73", "-."),
+    "openvins_mono": ("OpenVINS", "#0072B2", ":"),
 }
 
 
@@ -36,15 +37,15 @@ def main():
     for ax, seq in zip(axes, args.sequences):
         gt = file_interface.read_euroc_csv_trajectory(
             str(HERE / f"data/euroc/{seq}/mav0/state_groundtruth_estimate0/data.csv"))
-        ax.plot(gt.positions_xyz[:, 0], gt.positions_xyz[:, 1], "k--", lw=1.0)
-        for stem, (label, color) in METHODS.items():
+        ax.plot(gt.positions_xyz[:, 0], gt.positions_xyz[:, 1], color="0.25", lw=1.4, alpha=0.5)
+        for stem, (label, color, ls) in METHODS.items():
             path = HERE / f"results/{seq}/{stem}.tum"
             if not path.exists():
                 continue
             est = file_interface.read_tum_trajectory_file(str(path))
             ref, est = sync.associate_trajectories(copy.deepcopy(gt), est, max_diff=0.01)
             est.align(ref, correct_scale=False)
-            ax.plot(est.positions_xyz[:, 0], est.positions_xyz[:, 1], color=color, lw=0.8)
+            ax.plot(est.positions_xyz[:, 0], est.positions_xyz[:, 1], color=color, ls=ls, lw=0.9)
         ax.set_title(seq, fontsize=10)
         ax.set_aspect("equal", adjustable="datalim")
         ax.tick_params(labelsize=7)
@@ -53,10 +54,10 @@ def main():
 
     leg = axes[n]
     leg.axis("off")
-    leg.plot([], [], "k--", label="эталон")
-    for label, color in METHODS.values():
-        leg.plot([], [], color=color, label=label)
-    leg.legend(loc="center", fontsize=10, frameon=False)
+    leg.plot([], [], color="0.25", lw=1.4, alpha=0.5, label="эталон")
+    for label, color, ls in METHODS.values():
+        leg.plot([], [], color=color, ls=ls, lw=1.2, label=label)
+    leg.legend(loc="center", fontsize=10, frameon=False, handlelength=3)
     for ax in axes[n + 1:]:
         ax.axis("off")
 
