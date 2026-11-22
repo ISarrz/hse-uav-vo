@@ -24,3 +24,22 @@ python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 .venv/bin/evo_ape tum groundtruth.txt estimate.txt -a
 ```
+
+## Данные EuRoC
+
+```bash
+python3 -I scripts/fetch_euroc.py --list
+python3 -I scripts/fetch_euroc.py MH_01_easy MH_03_medium MH_05_difficult V1_02_medium V2_02_medium
+.venv/bin/python -I scripts/euroc_to_bag.py data/euroc/MH_01_easy --ros1 --ros2
+```
+
+## Запуск и оценка
+
+```bash
+scripts/run_orbslam3.sh MH_01_easy mono_inertial
+scripts/run_vins.sh MH_01_easy mono_imu
+scripts/run_openvins.sh MH_01_easy mono
+.venv/bin/python -I scripts/evaluate.py MH_01_easy
+```
+
+Траектории (формат TUM), логи и графики сохраняются в `results/<последовательность>/`, сводная таблица -- в `results/summary.csv`.

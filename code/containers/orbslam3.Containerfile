@@ -23,5 +23,10 @@ RUN git clone https://github.com/UZ-SLAMLab/ORB_SLAM3.git /opt/ORB_SLAM3 \
     && sed -i "s/make -j[0-9]*/make -j${JOBS}/g; s/make -j$/make -j${JOBS}/g" build.sh \
     && ./build.sh
 
+# в контейнере нет дисплея: отключаем окно Pangolin в примерах и пересобираем их
+RUN cd /opt/ORB_SLAM3 \
+    && sed -i -E 's/(ORB_SLAM3::System SLAM\(.*), *true\);/\1, false);/' Examples/*/*.cc \
+    && cd build && make -j${JOBS}
+
 ENV ORBSLAM3_ROOT=/opt/ORB_SLAM3
 WORKDIR /work
