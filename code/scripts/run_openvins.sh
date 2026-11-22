@@ -2,20 +2,24 @@
 # Запуск OpenVINS на последовательности EuRoC.
 # Использование: scripts/run_openvins.sh MH_01_easy [mono|stereo]
 # Требуется bag: scripts/euroc_to_bag.py data/euroc/<SEQ> --ros2
+# DATASET=sim CONFIG=sim -- данные data/sim/<SEQ>, конфигурация configs/sim/openvins/
 set -euo pipefail
 SEQ="$1"; MODE="${2:-mono}"
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
-SEQ_DIR="$HERE/data/euroc/$SEQ"
+SEQ_DIR="$HERE/data/${DATASET:-euroc}/$SEQ"
+CONFIG="${CONFIG:-}"
+CFG_MOUNT=(); CFG_SRC=/opt/ws/src/open_vins/config/euroc_mav
+if [ -n "$CONFIG" ]; then CFG_MOUNT=(-v "$HERE/configs/$CONFIG/openvins":/cfg:ro,Z); CFG_SRC=/cfg; fi
 OUT="$HERE/results/$SEQ"
 mkdir -p "$OUT"
 if [ "$MODE" = mono ]; then STEREO=false; NCAM=1; else STEREO=true; NCAM=2; fi
 
 # ROS_LOCALHOST_ONLY и отдельный домен, чтобы DDS не выходил в сеть хоста
 podman run --rm --network=host -e ROS_LOCALHOST_ONLY=1 -e ROS_DOMAIN_ID=$((RANDOM % 100 + 100)) \
-    -v "$SEQ_DIR":/data:ro,Z -v "$OUT":/work:Z -w /work \
+    -v "$SEQ_DIR":/data:ro,Z -v "$OUT":/work:Z "${CFG_MOUNT[@]}" -w /work \
     localhost/uav-openvins bash -c "
         source /opt/ws/install/setup.bash
-        cp -r /opt/ws/src/open_vins/config/euroc_mav /tmp/cfg
+        cp -r $CFG_SRC /tmp/cfg
         CFG=/tmp/cfg/estimator_config.yaml
         sed -i -e 's|^use_stereo:.*|use_stereo: $STEREO|' -e 's|^max_cameras:.*|max_cameras: $NCAM|' \
                -e 's|^save_total_state:.*|save_total_state: true|' \

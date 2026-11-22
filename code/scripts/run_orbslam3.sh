@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 # Запуск ORB-SLAM3 на последовательности EuRoC.
 # Использование: scripts/run_orbslam3.sh MH_01_easy [mono_inertial|stereo_inertial|mono|stereo]
+# DATASET=sim CONFIG=sim scripts/run_orbslam3.sh <полёт> mono_inertial  -- данные data/sim/<полёт>,
+#   конфигурация configs/sim/orbslam3_<режим>.yaml (scripts/make_sim_configs.py)
 set -euo pipefail
 SEQ="$1"; MODE="${2:-mono_inertial}"
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
-DATA="$HERE/data/euroc"
+DATA="$HERE/data/${DATASET:-euroc}"
+CONFIG="${CONFIG:-}"
 OUT="$HERE/results/$SEQ"
 mkdir -p "$OUT"
 
@@ -18,13 +21,23 @@ case "$MODE" in
     *) echo "неизвестный режим $MODE"; exit 1 ;;
 esac
 
+# своя конфигурация и список кадров для данных не из EuRoC
+CFG_MOUNT=(); CFG_PATH="\$E/$CFG"; TS_PATH="\$E/EuRoC_TimeStamps/$TS.txt"
+if [ -n "$CONFIG" ]; then
+    CFG_MOUNT=(-v "$HERE/configs/$CONFIG":/cfg:ro,Z); CFG_PATH="/cfg/orbslam3_$MODE.yaml"
+fi
+if [ "${DATASET:-euroc}" != euroc ]; then
+    grep -v '^#' "$DATA/$SEQ/mav0/cam0/data.csv" | cut -d, -f1 > "$OUT/orbslam3_timestamps.txt"
+    TS_PATH=/work/orbslam3_timestamps.txt
+fi
+
 podman run --rm --network=none \
-    -v "$DATA/$SEQ":/data:ro,Z -v "$OUT":/work:Z -w /work \
+    -v "$DATA/$SEQ":/data:ro,Z -v "$OUT":/work:Z "${CFG_MOUNT[@]}" -w /work \
     localhost/uav-orbslam3 bash -c "
         E=/opt/ORB_SLAM3/Examples/$DIR
-        cp \$E/$CFG /work/orbslam3_config.yaml
+        cp $CFG_PATH /work/orbslam3_config.yaml
         rm -f /work/online_trajectory.txt
-        \$E/$BIN /opt/ORB_SLAM3/Vocabulary/ORBvoc.txt \$E/$CFG /data \$E/EuRoC_TimeStamps/$TS.txt orbslam3_$MODE
+        \$E/$BIN /opt/ORB_SLAM3/Vocabulary/ORBvoc.txt $CFG_PATH /data $TS_PATH orbslam3_$MODE
     " > "$OUT/orbslam3_$MODE.log" 2>&1
 
 # ORB-SLAM3 пишет время в наносекундах; для evo переводим в секунды (формат TUM)

@@ -23,11 +23,16 @@ RUN git clone https://github.com/UZ-SLAMLab/ORB_SLAM3.git /opt/ORB_SLAM3 \
     && sed -i "s/make -j[0-9]*/make -j${JOBS}/g; s/make -j$/make -j${JOBS}/g" build.sh \
     && ./build.sh
 
-# в контейнере нет дисплея: отключаем окно Pangolin в примерах;
+# Исправление ошибки ORB-SLAM3: если на кадре не найдено ни одной особой точки,
+# конструктор Frame выходит до создания мьютекса IMU, и следующий вызов
+# Frame::setIntegrated() падает (std::system_error: Operation not permitted).
+# В контейнере нет дисплея: отключаем окно Pangolin в примерах;
 # в примерах для EuRoC с IMU дописываем запись онлайн-оценки позы на каждом кадре
 COPY patches/orbslam3_online_pose.py /tmp/orbslam3_online_pose.py
 RUN cd /opt/ORB_SLAM3 \
     && sed -i -E 's/(ORB_SLAM3::System SLAM\(.*), *true\);/\1, false);/' Examples/*/*.cc \
+    && sed -i -z -E 's/if\(mvKeys\.empty\(\)\)\s*\n\s*return;/if(mvKeys.empty()) { mpMutexImu = new std::mutex(); return; }/g' src/Frame.cc \
+    && test $(grep -c "if(mvKeys.empty()) { mpMutexImu" src/Frame.cc) -ge 1 \
     && python3 /tmp/orbslam3_online_pose.py Examples/Monocular-Inertial/mono_inertial_euroc.cc \
                                             Examples/Stereo-Inertial/stereo_inertial_euroc.cc \
     && cd build && make -j${JOBS}

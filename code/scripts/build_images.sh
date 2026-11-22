@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Сборка контейнеров с ORB-SLAM3, VINS-Fusion и OpenVINS.
-# Использование: scripts/build_images.sh [orbslam3|vins|openvins ...]
+# Сборка контейнеров с ORB-SLAM3, VINS-Fusion, OpenVINS и симулятором (sim).
+# Использование: scripts/build_images.sh [orbslam3|vins|openvins|sim ...]
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
 CTX="$HERE/containers"

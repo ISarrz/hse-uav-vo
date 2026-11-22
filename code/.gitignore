@@ -3,3 +3,4 @@ logs/
 data/
 results/
 __pycache__/
+sim/generated/

@@ -69,7 +69,7 @@ def is_causal(method):
 
 
 MAX_GAP_S = 0.25
-MAX_SPEED_MPS = 5.0  # EuRoC: скорость аппарата не превышает ~2.5 м/с
+MAX_SPEED_MPS = 5.0  # EuRoC: скорость аппарата не превышает ~2.5 м/с; для других данных -- --max-speed
 
 
 def segments(ts, pos):
@@ -80,7 +80,7 @@ def segments(ts, pos):
     После границы связь оценки с прежней системой координат потеряна."""
     dt = np.diff(ts)
     speed = np.linalg.norm(np.diff(pos, axis=0), axis=1) / np.maximum(dt, 1e-6)
-    breaks = np.where((dt > MAX_GAP_S) | (speed > MAX_SPEED_MPS))[0] + 1
+    breaks = np.where((dt > MAX_GAP_S) | (speed > MAX_SPEED_MPS))[0] + 1  # см. --max-speed
     return np.split(np.arange(len(ts)), breaks)
 
 
@@ -245,11 +245,15 @@ def main():
     ap.add_argument("--gnss-loss", action="store_true", help="считать метрику потери GNSS")
     ap.add_argument("--window", type=float, default=10.0, help="окно совмещения до t0, с")
     ap.add_argument("--t0-step", type=float, default=5.0, help="шаг перебора t0, с")
+    ap.add_argument("--dataset", default="euroc", help="папка в data/ (euroc, sim)")
+    ap.add_argument("--max-speed", type=float, default=MAX_SPEED_MPS,
+                    help="скорость, выше которой изменение оценки считается скачком, м/с")
     args = ap.parse_args()
+    globals()["MAX_SPEED_MPS"] = args.max_speed
 
     rows, gnss_rows = [], []
     for seq in args.sequences:
-        gt = HERE / f"data/euroc/{seq}/mav0/state_groundtruth_estimate0/data.csv"
+        gt = HERE / f"data/{args.dataset}/{seq}/mav0/state_groundtruth_estimate0/data.csv"
         res = HERE / f"results/{seq}"
         gt_ts = file_interface.read_euroc_csv_trajectory(str(gt)).timestamps
         gt_duration = gt_ts[-1] - gt_ts[0]
@@ -263,6 +267,9 @@ def main():
         xy, curves, ref_for_plot = [], defaultdict(list), None
         samples_by_method = defaultdict(list)
         for est_path in files:
+            if est_path.stat().st_size == 0:
+                print(f"{seq}: {est_path.name} пуст -- система не выдала оценку")
+                continue
             run = est_path.stem
             method = method_name(run)
             ref, est = load_pair(gt, est_path)

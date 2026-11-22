@@ -45,6 +45,8 @@ def build_messages(ts, seq_dir):
     for row in read_csv(seq_dir / "mav0/imu0/data.csv"):
         events.append((int(row[0]), "imu", row))
     for cam in ("cam0", "cam1"):
+        if not (seq_dir / f"mav0/{cam}/data.csv").exists():
+            continue  # в симуляции камера одна
         for row in read_csv(seq_dir / f"mav0/{cam}/data.csv"):
             events.append((int(row[0]), cam, row))
     events.sort(key=lambda e: e[0])
