@@ -23,9 +23,13 @@ RUN git clone https://github.com/UZ-SLAMLab/ORB_SLAM3.git /opt/ORB_SLAM3 \
     && sed -i "s/make -j[0-9]*/make -j${JOBS}/g; s/make -j$/make -j${JOBS}/g" build.sh \
     && ./build.sh
 
-# в контейнере нет дисплея: отключаем окно Pangolin в примерах и пересобираем их
+# в контейнере нет дисплея: отключаем окно Pangolin в примерах;
+# в примерах для EuRoC с IMU дописываем запись онлайн-оценки позы на каждом кадре
+COPY patches/orbslam3_online_pose.py /tmp/orbslam3_online_pose.py
 RUN cd /opt/ORB_SLAM3 \
     && sed -i -E 's/(ORB_SLAM3::System SLAM\(.*), *true\);/\1, false);/' Examples/*/*.cc \
+    && python3 /tmp/orbslam3_online_pose.py Examples/Monocular-Inertial/mono_inertial_euroc.cc \
+                                            Examples/Stereo-Inertial/stereo_inertial_euroc.cc \
     && cd build && make -j${JOBS}
 
 ENV ORBSLAM3_ROOT=/opt/ORB_SLAM3
